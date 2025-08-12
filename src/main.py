@@ -5,6 +5,7 @@ from langchain_community.utilities import BraveSearchWrapper
 from rich.console import Console
 from rich.markdown import Markdown
 from dotenv import load_dotenv
+from datetime import date
 
 load_dotenv()
 
@@ -12,9 +13,10 @@ console = Console()
 
 model = OllamaLLM(model="gemma3:4b")
 
+today_date = date.today().strftime("%B/%d/%Y")
 # Brave search wrapper
 search = BraveSearchWrapper(
-    api_key=os.environ["BRAVE_SEARCH_API_KEY"], search_kwargs={"count": 5}
+    api_key=os.environ["BRAVE_SEARCH_API_KEY"], search_kwargs={"count": 8}
 )
 
 
@@ -32,15 +34,25 @@ def web_snippets(query: str) -> str:
 
 
 template = """
-You are helpful AI web search assistant.
+You are a careful, grounded web QA assistant.
+
+Today's date is {today_date}.
+
+If the Sources are insufficient or conflicting, write exactly:
+Not enough info in the provided sources.
+and set not_answerable to true in the metadata block.
+
+When answering:
+- Keep it concise and factual.
+- Every claim must map to at least one URL from Sources.
+- Quote short snippets when exact wording matters, max 20 words.
+- If sources conflict, state the conflict briefly and cite both. Prefer the most recent and primary source.
 
 Web context:
 {web}
 
 Question:
 {question}
-
-Answer clearly and cite URLs inline when useful.
 """
 
 prompt = ChatPromptTemplate.from_template(template)
@@ -54,5 +66,5 @@ while True:
         break
 
     web = web_snippets(question)
-    result = chain.invoke({"question": question, "web": web})
+    result = chain.invoke({"question": question, "web": web, "today_date": today_date})
     console.print(Markdown(result))

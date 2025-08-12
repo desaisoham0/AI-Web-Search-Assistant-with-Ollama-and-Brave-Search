@@ -4,6 +4,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.utilities import BraveSearchWrapper
 from rich.console import Console
 from rich.markdown import Markdown
+from dotenv import load_dotenv
+
+load_dotenv()
 
 console = Console()
 
@@ -11,9 +14,9 @@ model = OllamaLLM(model="gemma3:4b")
 
 # Brave search wrapper
 search = BraveSearchWrapper(
-    api_key=os.environ["BRAVE_SEARCH_API_KEY"],
-    search_kwargs={"count": 5}
+    api_key=os.environ["BRAVE_SEARCH_API_KEY"], search_kwargs={"count": 5}
 )
+
 
 def web_snippets(query: str) -> str:
     docs = search.download_documents(query)
@@ -26,6 +29,7 @@ def web_snippets(query: str) -> str:
             snippet = snippet[:300] + "..."
         lines.append(f"- {title} \n {url}\n {snippet}")
     return "\n".join(lines) if lines else "No web results."
+
 
 template = """
 You are helpful AI web search assistant.
@@ -48,7 +52,7 @@ while True:
     print("\n\n")
     if question == "q":
         break
-    
+
     web = web_snippets(question)
     result = chain.invoke({"question": question, "web": web})
     console.print(Markdown(result))
